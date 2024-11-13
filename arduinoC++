@@ -1,0 +1,254 @@
+//C++
+//
+/*Code made by Julia Marques, Juliana Pivaro, Manpreet Kaur, Yatri Padhiyar
+ *Created on July 18 , 2024, at 10:32 AM
+ *Modified on Aug 1, 2024 at 10:03 AM*/
+
+/*Final Project - LED CHASER GAME
+ *LEDs light up sequentially with random colors displayed on the serial monitor
+ *Press the button when the specified color LED is lit.
+ *Correct press: LEDs light up faster.
+ *Incorrect press: Interval remains the same*/
+
+int buttonPin = 2; // Pin for the button
+int led1 = 5;
+int led2 = 6;
+int led3 = 7;
+int led4 = 8;
+int led5 = 9; // Individual LED pins
+int currentLEDIndex = 0; // Index of the currently active LED
+int targetLEDIndex = 0; // Index of the target LED to match
+bool buttonPressed = false; // State of the button press
+long lastChangeTime = 0; // Last time the LED changed
+unsigned long ledInterval = 1000; // Initial interval for LED changes
+const unsigned long debounceDelay = 50; // Debounce delay (ms)
+unsigned long lastDebounceTime = 0; // Last time the button state changed
+
+// 7-segment display segment pins
+const int A = 10;
+const int B = 11;
+const int C = A2;
+const int D = A1;
+const int E = A3; 
+const int F = 13;
+const int G = 12;
+
+int score = 0; // Score to be displayed on the 7-segment display
+const unsigned long defaultInterval = 1000; // Default LED interval
+
+void setup() 
+{
+  Serial.begin(9600);
+  pinMode(buttonPin, INPUT_PULLUP); // Set button pin as input with internal pull-up resistor
+  pinMode(led1, OUTPUT); 
+  pinMode(led2, OUTPUT); 
+  pinMode(led3, OUTPUT); 
+  pinMode(led4, OUTPUT); 
+  pinMode(led5, OUTPUT); 
+
+  pinMode(A, OUTPUT);
+  pinMode(B, OUTPUT);
+  pinMode(C, OUTPUT);
+  pinMode(D, OUTPUT);
+  pinMode(E, OUTPUT);
+  pinMode(F, OUTPUT);
+  pinMode(G, OUTPUT);
+
+  randomSeed(analogRead(A0)); // Seed random number generator with analog read
+  chooseColor(); // Choose the initial target LED
+  lastChangeTime = millis(); // Initialize the last change time
+
+  displayNumber(score); // Initialize the 7-segment display with 0
+}
+
+void loop() 
+{
+  unsigned long currentTime = millis(); // Get the current time
+  
+  // Check if it's time to change the LED
+  if (currentTime - lastChangeTime >= ledInterval) {
+    lastChangeTime = currentTime; // Update the last change time
+
+    // Turn off all LEDs
+    digitalWrite(led1, LOW);
+    digitalWrite(led2, LOW);
+    digitalWrite(led3, LOW);
+    digitalWrite(led4, LOW);
+    digitalWrite(led5, LOW);
+    
+    // Move to the next LED in sequence
+    currentLEDIndex = (currentLEDIndex + 1) % 5;
+    
+    // Turn on the current LED
+    switch (currentLEDIndex) {
+      case 0: digitalWrite(led1, HIGH); break;
+      case 1: digitalWrite(led2, HIGH); break;
+      case 2: digitalWrite(led3, HIGH); break;
+      case 3: digitalWrite(led4, HIGH); break;
+      case 4: digitalWrite(led5, HIGH); break;
+    }
+  }
+
+  hitButton(); // Check if the button has been pressed
+}
+
+void chooseColor() {
+  targetLEDIndex = random(5); // Generate a random number for target LED index
+  Serial.print("Chosen color: ");
+  switch (targetLEDIndex) {
+    case 0: Serial.println("Red"); break;
+    case 1: Serial.println("Orange"); break;
+    case 2: Serial.println("Yellow"); break;
+    case 3: Serial.println("Green"); break;
+    case 4: Serial.println("Blue"); break;
+    default: break;
+  }
+  delay(1000); // Delay to allow the user to see the chosen color
+}
+
+void hitButton() {
+  int buttonState = digitalRead(buttonPin); // Read the state of the button
+  unsigned long currentTime = millis(); // Get the current time
+
+  if (buttonState == LOW) { // Button press is LOW due to INPUT_PULLUP
+    if ((currentTime - lastDebounceTime > debounceDelay)) { // Check if debounce time has passed
+      if (!buttonPressed) { // Only register the press if button was not previously pressed
+        buttonPressed = true;
+        lastDebounceTime = currentTime; // Update the debounce timer
+        if (currentLEDIndex == targetLEDIndex) {
+          Serial.println("Good Job!");
+          score++;
+          if (score > 9) {
+            score = 0; // Reset score if it goes beyond 9
+            ledInterval = defaultInterval; // Reset the interval to default
+          }
+          displayNumber(score); // Update the 7-segment display
+          ledInterval = max(100, ledInterval - 100); // Decrease interval, minimum 100ms
+          chooseColor(); // Choose a new color
+        } else {
+          Serial.println("Wrong! Try Again");
+        }
+      }
+    }
+  } else {
+    if (buttonPressed) { // Reset button state when released
+      buttonPressed = false;
+      lastDebounceTime = currentTime; // Update the debounce timer
+    }
+  }
+}
+
+void displayNumber(int num) {
+  switch (num) {
+    case 0: zero(); break;
+    case 1: one(); break;
+    case 2: two(); break;
+    case 3: three(); break;
+    case 4: four(); break;
+    case 5: five(); break;
+    case 6: six(); break;
+    case 7: seven(); break;
+    case 8: eight(); break;
+    case 9: nine(); break;
+  }
+}
+
+void zero() {
+  digitalWrite(A, HIGH);
+  digitalWrite(B, HIGH);
+  digitalWrite(C, HIGH);
+  digitalWrite(D, HIGH);
+  digitalWrite(E, HIGH);
+  digitalWrite(F, HIGH);
+  digitalWrite(G, LOW);
+}
+
+void one() {
+  digitalWrite(A, LOW);
+  digitalWrite(B, HIGH);
+  digitalWrite(C, HIGH);
+  digitalWrite(D, LOW);
+  digitalWrite(E, LOW);
+  digitalWrite(F, LOW);
+  digitalWrite(G, LOW);
+}
+
+void two() {
+  digitalWrite(A, HIGH);
+  digitalWrite(B, HIGH);
+  digitalWrite(C, LOW);
+  digitalWrite(D, HIGH);
+  digitalWrite(E, HIGH);
+  digitalWrite(F, LOW);
+  digitalWrite(G, HIGH);
+}
+
+void three() {
+  digitalWrite(A, HIGH);
+  digitalWrite(B, HIGH);
+  digitalWrite(C, HIGH);
+  digitalWrite(D, HIGH);
+  digitalWrite(E, LOW);
+  digitalWrite(F, LOW);
+  digitalWrite(G, HIGH);
+}
+
+void four() {
+  digitalWrite(A, LOW);
+  digitalWrite(B, HIGH);
+  digitalWrite(C, HIGH);
+  digitalWrite(D, LOW);
+  digitalWrite(E, LOW);
+  digitalWrite(F, HIGH);
+  digitalWrite(G, HIGH);
+}
+
+void five() {
+  digitalWrite(A, HIGH);
+  digitalWrite(B, LOW);
+  digitalWrite(C, HIGH);
+  digitalWrite(D, HIGH);
+  digitalWrite(E, LOW);
+  digitalWrite(F, HIGH);
+  digitalWrite(G, HIGH);
+}
+
+void six() {
+  digitalWrite(A, HIGH);
+  digitalWrite(B, LOW);
+  digitalWrite(C, HIGH);
+  digitalWrite(D, HIGH);
+  digitalWrite(E, HIGH);
+  digitalWrite(F, HIGH);
+  digitalWrite(G, HIGH);
+}
+
+void seven() {
+  digitalWrite(A, HIGH);
+  digitalWrite(B, HIGH);
+  digitalWrite(C, HIGH);
+  digitalWrite(D, LOW);
+  digitalWrite(E, LOW);
+  digitalWrite(F, LOW);
+  digitalWrite(G, LOW);
+}
+
+void eight() {
+  digitalWrite(A, HIGH);
+  digitalWrite(B, HIGH);
+  digitalWrite(C, HIGH);
+  digitalWrite(D, HIGH);
+  digitalWrite(E, HIGH);
+  digitalWrite(F, HIGH);
+  digitalWrite(G, HIGH);
+}
+
+void nine() {
+  digitalWrite(A, HIGH);
+  digitalWrite(B, HIGH);
+  digitalWrite(C, HIGH);
+  digitalWrite(D, HIGH);
+  digitalWrite(E, LOW);
+  digitalWrite(F, HIGH);
+  digitalWrite(G, HIGH);
+}
